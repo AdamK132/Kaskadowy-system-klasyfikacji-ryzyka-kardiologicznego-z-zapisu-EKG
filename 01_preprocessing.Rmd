@@ -1,0 +1,67 @@
+---
+title: "Preprocessing"
+author: "Adam Kołodziejczak"
+date: "2026-06-02"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+data_EKG <- read.csv2("data_EKG_filter.csv")
+head(data_EKG)
+```
+
+
+```{r}
+data_EKG <- data_EKG %>% 
+  select(-c(patient, Rx, Hx, Sx)) %>% 
+  mutate(across(.cols = -c(Sex, Dx), .fns = as.numeric)) %>% 
+  mutate(Sex = na_if(Sex, "Unknown"))
+
+head(data_EKG)
+```
+
+
+```{r}
+data_model1 <- data_EKG %>% 
+  mutate(Czy_chory = ifelse(Dx == "426783006",0,1)) %>% 
+  mutate(Czy_chory = as.factor(Czy_chory)) %>% 
+  select(-Dx)
+
+data_model1 %>% 
+  count(Czy_chory)
+
+head(data_model1)
+
+saveRDS(data_model1, "data_model1.rds")
+```
+
+```{r}
+data_model2 <- data_EKG %>% 
+  filter(Dx != "426783006")
+
+high <- c("164865005", "164930006", "429622005", "164889003","164890007","426761007","713422000","233896004","233897008","27885002","28189009","164909002","74390002","195060002")
+temp_high <- paste(high, collapse = "|")
+
+data_model2 <- data_model2 %>%
+  mutate(
+    Poziom_Ryzyka = case_when(
+      str_detect(Dx, temp_high) ~ "High",
+      TRUE ~ "Middle" 
+    )
+  ) %>%
+  mutate(Poziom_Ryzyka = as.factor(Poziom_Ryzyka)) %>% 
+  select(-Dx)
+
+data_model2 %>% 
+  count(Poziom_Ryzyka)
+
+head(data_model2)
+
+saveRDS(data_model2, "data_model2.rds")
+```
+
+
